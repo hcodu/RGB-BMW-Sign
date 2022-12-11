@@ -29,6 +29,7 @@ from adafruit_io.adafruit_io import IO_MQTT
 # ----- Global state variables
 LIGHTS_ON = True
 MODE = "bmw"
+COLOR = 0x6A0DAD
 M_END_PIXEL_INDEX = 53
 SLASH1_END_PIXEL_INDEX = 81
 SLASH2_END_PIXEL_INDEX = 106
@@ -97,7 +98,7 @@ def on_message(client, feed_id, payload):
     # Message function will be called when a subscribed feed has a new value.
     # The feed_id parameter identifies the feed, and the payload parameter has
     # the new value.
-    global LIGHTS_ON, MODE
+    global LIGHTS_ON, MODE, COLOR
     
     if feed_id == "pico-feeed":
         if payload == "true":
@@ -106,7 +107,13 @@ def on_message(client, feed_id, payload):
             LIGHTS_ON = False
     
     if feed_id == "pico-mode-feed":
-        MODE = payload
+        if(payload[0:1] == "#"):
+            MODE = "solid"
+            payload = "0x" + payload[1:7]
+            hex_int = int(payload, 16)
+            COLOR = hex_int    
+        else:    
+            MODE = payload
         
     if feed_id == "pico-brightness-feed":
         pixels.brightness = int(payload) / 100
@@ -115,6 +122,9 @@ def on_message(client, feed_id, payload):
     if LIGHTS_ON:
         if MODE == "bmw":
             bmw_colors()      
+        if MODE == "solid":
+            pixels.fill(COLOR)
+            pixels.show()
 
     if not LIGHTS_ON:
         pixels.fill((0, 0, 0))
